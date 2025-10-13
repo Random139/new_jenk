@@ -6,17 +6,17 @@ pipeline {
     stages {
         stage('Build') {
             steps {
-                bat 'echo "In Build"'
+                sh 'echo "In Build"'
             }
         }
         stage('Test'){
             steps {
-                bat 'echo "Hello"'
+                sh 'echo "Hello"'
             }
         }
         stage('Deploy') {
             steps {
-                bat 'echo "publish"' //
+                sh 'echo "publish"' 
             }
         }
     }
