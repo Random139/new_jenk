@@ -1,24 +1,84 @@
 pipeline {
-    agent any
-    options {
-        skipStagesAfterUnstable()
+    agent any   // Run on any available Jenkins agent
+
+    environment {
+        APP_ENV = 'dev'
+        APP_NAME = 'my-sample-app'
     }
+
+    options {
+        timestamps()             // Show timestamps in console output
+        skipDefaultCheckout()    // We'll manually checkout the repo
+        buildDiscarder(logRotator(numToKeepStr: '10')) // Keep only 10 builds
+    }
+
     stages {
+
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm   // Pulls code from the same repo where Jenkinsfile lives
+            }
+        }
+
         stage('Build') {
             steps {
-                sh 'echo "In Build"'
+                echo 'Building the application...'
+                sh '''
+                    echo "Running build commands..."
+                    mkdir -p build
+                    echo "Build complete for ${APP_NAME}" > build/info.txt
+                '''
             }
         }
-        stage('Test'){
+
+        stage('Test') {
             steps {
-                sh 'echo "Hello">text.txt'
-                sh 'cat text.txt'
+                echo 'Running tests...'
+                sh '''
+                    echo "Starting tests..."
+                    sleep 2
+                    echo "All tests passed ✅"
+                '''
             }
         }
-        stage('Deploy') {
+
+        stage('Package') {
             steps {
-                sh 'echo "publish"' 
+                echo 'Packaging application...'
+                sh '''
+                    mkdir -p output
+                    tar -czf output/${APP_NAME}.tar.gz build/
+                '''
             }
+        }
+
+        stage('Archive Artifacts') {
+            steps {
+                echo 'Archiving build output...'
+                archiveArtifacts artifacts: 'output/*.tar.gz', fingerprint: true
+            }
+        }
+
+        stage('Deploy (Optional)') {
+            when { branch 'main' } // Only run on main branch
+            steps {
+                echo 'Deploying application to environment...'
+                sh 'echo "Deploying ${APP_NAME} to ${APP_ENV} environment"'
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '✅ Build completed successfully!'
+        }
+        failure {
+            echo '❌ Build failed. Please check logs.'
+        }
+        always {
+            echo '🧹 Cleaning up workspace...'
+            cleanWs()  // Cleans workspace after every run
         }
     }
 }
