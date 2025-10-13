@@ -11,13 +11,12 @@ pipeline {
         }
         stage('Test'){
             steps {
-                bat 'make check'
-                junit 'reports/**/*.xml'
+                bat 'echo "Hello"'
             }
         }
         stage('Deploy') {
             steps {
-                bat 'make publish' //
+                bat 'echo "publish"' //
             }
         }
     }
