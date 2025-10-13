@@ -61,7 +61,6 @@ pipeline {
         }
 
         stage('Deploy (Optional)') {
-            when { branch 'main' } // Only run on main branch
             steps {
                 echo 'Deploying application to environment...'
                 sh 'echo "Deploying ${APP_NAME} to ${APP_ENV} environment"'
@@ -75,10 +74,6 @@ pipeline {
         }
         failure {
             echo '❌ Build failed. Please check logs.'
-        }
-        always {
-            echo '🧹 Cleaning up workspace...'
-            cleanWs()  // Cleans workspace after every run
         }
     }
 }
