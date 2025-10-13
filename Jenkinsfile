@@ -12,7 +12,7 @@ pipeline {
         stage('Test'){
             steps {
                 sh 'echo "Hello">text.txt'
-                sh 'echo text.txt'
+                sh 'cat text.txt'
             }
         }
         stage('Deploy') {
