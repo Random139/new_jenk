@@ -11,7 +11,8 @@ pipeline {
         }
         stage('Test'){
             steps {
-                sh 'echo "Hello"'
+                sh 'echo "Hello">text.txt'
+                sh 'echo text.txt'
             }
         }
         stage('Deploy') {
