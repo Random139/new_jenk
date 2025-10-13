@@ -2,16 +2,9 @@ pipeline {
     agent any   // Run on any available Jenkins agent
 
     environment {
-        APP_ENV = 'dev'
-        APP_NAME = 'my-sample-app'
+        AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key')
+        AWS_SECRET_ACCESS_KEY = credentials('jenkins_secret_key')
     }
-
-    options {
-        timestamps()             // Show timestamps in console output
-        skipDefaultCheckout()    // We'll manually checkout the repo
-        buildDiscarder(logRotator(numToKeepStr: '10')) // Keep only 10 builds
-    }
-
     stages {
 
         stage('Checkout') {
