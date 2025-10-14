@@ -31,7 +31,7 @@ pipeline {
                 sh '''
                     echo "Starting tests..."
                     sleep 2
-                    echo "All tests passed ✅"
+                    echo "All tests passed"
                 '''
             }
         }
@@ -63,10 +63,10 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build completed successfully!'
+            echo 'Build completed successfully!'
         }
         failure {
-            echo '❌ Build failed. Please check logs.'
+            echo 'Build failed. Please check logs.'
         }
     }
 }
