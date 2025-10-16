@@ -1,72 +1,78 @@
 pipeline {
-    agent any   // Run on any available Jenkins agent
+  agent any
+  environment {
+    AWS_REGION = 'ap-southeast-2' 
+    BUCKET_NAME = "my-sync-bucket-${env.BUILD_NUMBER}"
+    ROLE_ARN = 'arn:aws:iam::873046390774:role/S3FullAccess'
+    ROLE_SESSION_NAME = 'JenkinsSession-${env.BUILD_NUMBER}'
+  }
+  stages {
+    stage('Assume Role') {
+      steps {
+        script {
+          def assumeRoleOutput = sh(
+            script: """
+              aws sts assume-role --role-arn ${ROLE_ARN} --role-session-name ${ROLE_SESSION_NAME} --region ${AWS_REGION}
+            """,
+            returnStdout: true
+          ).trim()
 
-    environment {
-        AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key')
-        AWS_SECRET_ACCESS_KEY = credentials('jenkins_secret_key')
-    }
-    stages {
-
-        stage('Checkout') {
-            steps {
-                echo 'Checking out source code...'
-                checkout scm   // Pulls code from the same repo where Jenkinsfile lives
-            }
+          def credentials = readJSON text: assumeRoleOutput
+          env.AWS_ACCESS_KEY_ID = credentials.Credentials.AccessKeyId
+          env.AWS_SECRET_ACCESS_KEY = credentials.Credentials.SecretAccessKey
+          env.AWS_SESSION_TOKEN = credentials.Credentials.SessionToken
         }
-
-        stage('Build') {
-            steps {
-                echo 'Building the application...'
-                sh '''
-                    echo "Running build commands..."
-                    mkdir -p build
-                    echo "Build complete for ${APP_NAME}" > build/info.txt
-                '''
-            }
-        }
-
-        stage('Test') {
-            steps {
-                echo 'Running tests...'
-                sh '''
-                    echo "Starting tests..."
-                    sleep 2
-                    echo "All tests passed"
-                '''
-            }
-        }
-
-        stage('Package') {
-            steps {
-                echo 'Packaging application...'
-                sh '''
-                    mkdir -p output
-                    tar -czf output/${APP_NAME}.tar.gz build/
-                '''
-            }
-        }
-
-        stage('Archive Artifacts') {
-            steps {
-                echo 'Archiving build output...'
-                archiveArtifacts artifacts: 'output/*.tar.gz', fingerprint: true
-            }
-        }
-
-        stage('Deploy (Optional)') {
-            steps {
-                echo 'Deploying application to environment...'
-                sh 'echo "Deploying ${APP_NAME} to ${APP_ENV} environment"'
-            }
-        }
+      }
     }
 
-    post {
-        success {
-            echo 'Build completed successfully!'
+    stage('Prepare Bucket') {
+      steps {
+        script {
+          def exists = sh(
+            script: "aws s3api head-bucket --bucket ${BUCKET_NAME} --region ${AWS_REGION} 2>/dev/null",
+            returnStatus: true
+          )
+          if (exists != 0) {
+            sh """
+              aws s3api create-bucket \\
+                --bucket ${BUCKET_NAME} \\
+                --region ${AWS_REGION} \\
+                --create-bucket-configuration LocationConstraint=${AWS_REGION}
+            """
+            echo "Bucket ${BUCKET_NAME} created"
+          } else {
+            echo "Bucket ${BUCKET_NAME} already exists"
+          }
         }
-        failure {
-            echo 'Build failed. Please check logs.'
-        }
+      }
     }
+
+    stage('Checkout Code') {
+      steps {
+        git branch: 'main', url: 'https://github.com/your-org/your-repo.git'
+      }
+    }
+
+    stage('Sync to S3') {
+      steps {
+        script {
+          sh """
+            aws s3 sync . s3://${BUCKET_NAME} --region ${AWS_REGION} --delete
+          """
+        }
+      }
+    }
+  }
+
+  post {
+    success {
+      echo "SUCCESS: Repository synced to s3://${BUCKET_NAME}"
+    }
+    failure {
+      echo "FAILURE: Could not sync to S3"
+    }
+    always {
+      echo "Pipeline finished (build #${env.BUILD_NUMBER})"
+    }
+  }
 }
