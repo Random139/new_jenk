@@ -2,9 +2,9 @@ pipeline {
   agent any
   environment {
     AWS_REGION = 'ap-southeast-2' 
-    BUCKET_NAME = "my-sync-bucket-${env.BUILD_NUMBER}"
+    BUCKET_NAME = "my-sync-bucket139"
     ROLE_ARN = 'arn:aws:iam::873046390774:role/S3FullAccess'
-    ROLE_SESSION_NAME = 'JenkinsSession-${env.BUILD_NUMBER}'
+    ROLE_SESSION_NAME = 'JenkinsSession'
   }
   stages {
     stage('Assume Role') {
