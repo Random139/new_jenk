@@ -49,7 +49,7 @@ pipeline {
 
     stage('Checkout Code') {
       steps {
-        git branch: 'main', url: 'https://github.com/your-org/your-repo.git'
+        git branch: 'main', url: 'https://github.com/Random139/new_jenk.git'
       }
     }
 
